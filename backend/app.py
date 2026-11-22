@@ -1,7 +1,9 @@
 
 # Import necessary libraries
+import os
+
 from flask import Flask, request, jsonify
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
 # Import RAG utility functions
@@ -12,7 +14,11 @@ from rag_utils import retrieve, rag
 # Configuration
 # ---------------------------------------------------------
 
-EMBED_MODEL = "HarishMaths/Hotel-Policy-Embedding"
+# Embeddings are served by the Great Learning OpenAI-compatible API
+# (AGENTS.md section 6.16 decision: text-embedding-3-small — validated by the
+# containment A/B and the full DeepEval re-run). Only EMBEDDING_API_KEY must be
+# provided via the environment (Codespace secret); base URL and model have
+# code defaults. The FAISS index must be serialized with the same embedder.
 VECTORSTORE_PATH = "faiss_index"
 
 
@@ -24,13 +30,13 @@ rag_api = Flask("Aurora Stay API")
 
 
 # ---------------------------------------------------------
-# Load the embedding model
+# Initialize the embeddings client
 # ---------------------------------------------------------
 
-embeddings = HuggingFaceEmbeddings(
-    model_name=EMBED_MODEL,
-    model_kwargs={"device": "cpu"},
-    encode_kwargs={"normalize_embeddings": True},
+embeddings = OpenAIEmbeddings(
+    model=os.getenv("EMBEDDING_MODEL", "text-embedding-3-small"),
+    api_key=os.getenv("EMBEDDING_API_KEY"),
+    base_url=os.getenv("EMBEDDING_BASE_URL", "https://aibe.mygreatlearning.com/openai/v1"),
 )
 
 
