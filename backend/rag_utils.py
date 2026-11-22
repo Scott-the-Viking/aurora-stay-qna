@@ -88,4 +88,23 @@ def rag(
         model=model
     )
 
+    # Reasoning-model guardrail (ported from the notebook, cell 107): a reasoning
+    # generator can spend the whole max_tokens budget on reasoning and return
+    # EMPTY content, which breaks downstream consumers. Retry once with doubled
+    # headroom; normal answers are unaffected.
+    if not (answer.content or "").strip():
+        model_retry = ChatOpenAI(
+            model=model_name,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens * 2,
+            openai_api_key=os.getenv('OPENAI_API_KEY'),
+            openai_api_base=os.getenv('OPENAI_API_BASE')
+        )
+        answer = generate(
+            query=query,
+            retrieved_chunks=retrieved_chunks,
+            model=model_retry
+        )
+
     return answer.content, retrieved_chunks
